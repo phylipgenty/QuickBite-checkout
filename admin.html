@@ -56,11 +56,14 @@
     </div>
     
     <script>
-        // Check if the admin is logged in
-        if (localStorage.getItem("isAdminLoggedIn") !== "true") {
-            // If not logged in, redirect to login page
-            window.location.href = "admin-login.html";
-        }
+        // Check if the admin is already logged in
+if (localStorage.getItem("isAdmin") !== "true") {
+    window.location.href = "admin-login.html";  // Redirect to login page if not logged in
+} else {
+    // Admin is logged in, continue showing the admin page
+    console.log("Welcome, Admin!");
+}
+
 
         function loadAdminMenu() {
             const menuContainer = document.getElementById("adminMenuContainer");
