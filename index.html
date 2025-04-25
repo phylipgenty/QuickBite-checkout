@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickBite User Menu</title>
+    <script src="https://js.paystack.co/v1/inline.js"></script>
+    <style>
+        /* Your existing CSS styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+        .container {
+            width: 50%;
+            margin: 50px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .menu-item, .cart-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+        .menu-item img {
+            width: 50px;
+            height: 50px;
+            border-radius: 5px;
+            object-fit: cover;
+            margin-right: 10px;
+        }
+        button {
+            padding: 5px 10px;
+            border: none;
+            background: #5cb85c;
+            color: white;
+            cursor: pointer;
+        }
+        #cartContainer {
+            margin-top: 20px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #checkoutBtn {
+            margin-top: 10px;
+            background: #FEA116;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        /* New CSS for the countdown timer */
+        #countdownTimer {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #timer {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #FEA116;
+        }
+        #progressBarContainer {
+            width: 100%;
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        #progressBar {
+            height: 100%;
+            width: 0%;
+            background-color: #FEA116;
+            border-radius: 5px;
+            transition: width 1s linear;
+        }
+    </style>
+
+
+<!-- The logo head is here -->
+<link rel="shortcut icon" href="img/rest.png" type="">
+
+</head>
+<body>
+    <div class="container">
+        <h2 style="color: #FEA116;">QuickBite - Available Food Menu</h2>
+        <div id="menuContainer"></div>
+
+        <!-- Add the Countdown Timer Here -->
+        <div id="countdownTimer" style="display: none; margin-top: 20px;">
+            <h3>Your order will arrive in:</h3>
+            <p id="timer">05:00</p>
+            <div id="progressBarContainer">
+                <div id="progressBar"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="cartContainer">
+        <h2 style="color: #FEA116;">Cart</h2>
+        <div id="cartItems"></div>
+        <p><strong>Subtotal: ₦<span id="totalPrice">0</span></strong></p>
+        <button id="checkoutBtn" onclick="showReviewModal()">Checkout</button>
+    </div>
+
+    <div id="reviewModal" class="modal">
+        <h2 style="color: #FEA116;">Order Review</h2>
+        <div id="reviewDetails"></div>
+        <p><strong>Subtotal: ₦<span id="reviewSubtotal"></span></strong></p>
+        <p>Delivery Fee: ₦70</p>
+        <p>Plate Fee: ₦200</p>
+        <p><strong>Total: ₦<span id="reviewTotal"></span></strong></p>
+        <h3>Enter Your Details</h3>
+        <input type="text" id="userName" placeholder="Your Name" required><br>
+        <br>
+        <input type="email" id="userEmail" placeholder="Your Email" required><br>
+        <br>
+        <input type="text" id="userAddress" placeholder="Delivery Address" required><br>
+        <br>
+        <button onclick="processOrder()">Confirm Purchase</button>
+        <button onclick="closeModal()">Cancel</button>
+    </div>
+
+    <script>
+        let cart = [];
+        let timeLeft = 300; // 5 minutes in seconds
+        let timerInterval;
+
+        // Function to load the user menu
+        function loadUserMenu() {
+            const menuContainer = document.getElementById("menuContainer");
+            menuContainer.innerHTML = "";
+            
+            const storedMenu = JSON.parse(localStorage.getItem("menuItems")) || [];
+            const availableItems = storedMenu.filter(item => item.available);
+            
+            if (availableItems.length === 0) {
+                menuContainer.innerHTML = "<p>No food items available at the moment.</p>";
+                return;
+            }
+            
+            availableItems.forEach(item => {
+                const menuItem = document.createElement("div");
+                menuItem.classList.add("menu-item");
+                
+                const imgTag = item.image ? `<img src="${item.image}" alt="${item.name}">` : "";
+                
+                menuItem.innerHTML = `
+                    ${imgTag}
+                    <span>${item.name} - ₦${item.price}</span>
+                    <input type="number" id="qty-${item.name}" value="1" min="1" style="width: 40px;">
+                    <button onclick="addToCart('${item.name}', ${item.price})">Add to Cart</button>
+                `;
+                
+                menuContainer.appendChild(menuItem);
+            });
+        }
+
+        // Function to add items to the cart
+        function addToCart(foodName, price) {
+            const qtyInput = document.getElementById(`qty-${foodName}`);
+            const qty = parseInt(qtyInput.value);
+            const existingItem = cart.find(item => item.name === foodName);
+            
+            if (existingItem) {
+                existingItem.quantity += qty;
+            } else {
+                cart.push({ name: foodName, price: price, quantity: qty });
+            }
+            
+            updateCart();
+        }
+
+        // Function to update the cart display
+        function updateCart() {
+            const cartContainer = document.getElementById("cartItems");
+            cartContainer.innerHTML = "";
+            let total = 0;
+
+            cart.forEach((item, index) => {
+                total += item.price * item.quantity;
+                const cartItem = document.createElement("div");
+                cartItem.classList.add("cart-item");
+                cartItem.innerHTML = `
+                    <span>${item.name} x${item.quantity} - ₦${item.price * item.quantity}</span>
+                    <button onclick="removeFromCart(${index})">Remove</button>
+                `;
+                cartContainer.appendChild(cartItem);
+            });
+            
+            document.getElementById("totalPrice").innerText = total;
+        }
+
+        // Function to remove items from the cart
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCart();
+        }
+
+        // Function to show the review modal
+        function showReviewModal() {
+            let subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+            document.getElementById("reviewSubtotal").innerText = subtotal;
+            document.getElementById("reviewTotal").innerText = subtotal + 70 + 200;
+            document.getElementById("reviewModal").style.display = "block";
+        }
+
+        // Function to process the order
+        function processOrder() {
+            const name = document.getElementById("userName").value;
+            const email = document.getElementById("userEmail").value;
+            const address = document.getElementById("userAddress").value;
+
+            // Validate inputs
+            if (!name || !email || !address) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            // Validate email format
+            if (!validateEmail(email)) {
+                alert("Please enter a valid email address.");
+                return;
+            }
+
+            // Prepare order details
+            const orderDetails = cart.map(item => `${item.name} x${item.quantity} - ₦${item.price * item.quantity}`).join(", ");
+            const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+            const total = subtotal + 70 + 200; // Add delivery and plate fees
+
+            // Store order details for later use
+            window.orderDetails = {
+                name: name,
+                email: email,
+                address: address,
+                orderDetails: orderDetails,
+                subtotal: `₦${subtotal}`,
+                total: `₦${total}`
+            };
+
+            // Proceed to payment
+            initiatePaystackPayment(email, total);
+        }
+
+        // Function to initiate Paystack payment
+        function initiatePaystackPayment(email, amount) {
+            const handler = PaystackPop.setup({
+                key: 'pk_test_86cac557284c8d269296c1465d5f4994eb6dcddf', // Replace with your Paystack Public Key
+                email: email,
+                amount: amount * 100, // Convert to kobo
+                currency: 'NGN',
+                callback: function(response) {
+                    alert('Payment complete! Reference: ' + response.reference);
+                    startTimer(); // Start the countdown timer after successful payment
+                    sendOrderDetails(); // Send order details after successful payment
+                    clearCart(); // Clear the cart after successful payment
+                },
+                onClose: function() {
+                    alert('Payment window closed.');
+                }
+            });
+            handler.openIframe();
+        }
+
+        // Function to start the countdown timer
+        function startTimer() {
+            // Show the countdown timer on the main page
+            document.getElementById("countdownTimer").style.display = "block";
+
+            // Start the countdown
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        // Function to update the timer
+        function updateTimer() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById("timer").textContent = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+            updateProgressBar();
+
+            if (timeLeft === 0) {
+                clearInterval(timerInterval);
+                document.getElementById("timer").textContent = "Order Delivered!";
+                document.getElementById("timer").style.color = "#5cb85c";
+                notifyUser("Your QuickBite order has been delivered!");
+            } else {
+                timeLeft--;
+            }
+        }
+
+        // Function to update the progress bar
+        function updateProgressBar() {
+            const progress = ((300 - timeLeft) / 300) * 100;
+            document.getElementById("progressBar").style.width = `${progress}%`;
+        }
+
+        // Function to notify the user
+        function notifyUser(message) {
+            if (Notification.permission === "granted") {
+                new Notification(message);
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        new Notification(message);
+                    }
+                });
+            }
+        }
+
+        // Function to send order details to Formspree
+        function sendOrderDetails() {
+            const { name, email, address, orderDetails, subtotal, total } = window.orderDetails;
+
+            const formData = new FormData();
+            formData.append("name", name);
+            formData.append("email", email);
+            formData.append("address", address);
+            formData.append("orderDetails", orderDetails);
+            formData.append("subtotal", subtotal);
+            formData.append("total", total);
+
+            fetch("https://formspree.io/f/xqapeoyb", { // Replace with your Formspree endpoint
+                method: "POST",
+                body: formData,
+                headers: {
+                    "Accept": "application/json"
+                }
+            }).then(response => {
+                if (response.ok) {
+                    alert("Order details sent successfully!");
+                } else {
+                    alert("Failed to send order details. Please try again.");
+                }
+            }).catch(error => {
+                console.error("Error:", error);
+                alert("Failed to send order details. Please try again.");
+            });
+        }
+
+        // Function to clear the cart and reset the timer
+        function clearCart() {
+            cart = [];
+            updateCart();
+            localStorage.removeItem("cart");
+            closeModal();
+
+            // Reset the timer
+            clearInterval(timerInterval);
+            timeLeft = 300; // Reset to 5 minutes
+            document.getElementById("countdownTimer").style.display = "none";
+            document.getElementById("timer").textContent = "05:00";
+            document.getElementById("timer").style.color = "#FEA116";
+            document.getElementById("progressBar").style.width = "0%";
+        }
+
+        // Function to close the modal
+        function closeModal() {
+            document.getElementById("reviewModal").style.display = "none";
+        }
+
+        // Helper function to validate email format
+        function validateEmail(email) {
+            const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return regex.test(email);
+        }
+
+        // Polling function to check for menu updates
+        function checkForMenuUpdates() {
+            const lastUpdate = localStorage.getItem("menuUpdated");
+            if (lastUpdate !== window.lastMenuUpdate) {
+                window.lastMenuUpdate = lastUpdate;
+                loadUserMenu(); // Reload the menu if there's an update
+            }
+        }
+
+        // Initialize the page
+        window.onload = () => {
+            loadUserMenu();
+            // Start polling for updates every 5 seconds
+            setInterval(checkForMenuUpdates, 5000);
+        };
+        
+    </script>
+</body>
+</html>
