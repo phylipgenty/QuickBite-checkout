@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Thank You!</title>
+  <style>
+    body {
+      text-align: center;
+      padding: 50px;
+      font-family: 'Poppins', sans-serif;
+      background: #f0f8ff;
+      overflow: hidden;
+      position: relative;
+    }
+    h1 {
+      font-size: 2.5em;
+      color: #333;
+    }
+    p {
+      font-size: 1.2em;
+      color: #555;
+    }
+    .timer {
+      font-size: 2em;
+      margin-top: 20px;
+      color: green;
+    }
+    /* Delivery man animation */
+    .delivery {
+      position: absolute;
+      bottom: 50px;
+      left: -100px;
+      width: 100px;
+      animation: ride 10s linear infinite;
+    }
+    @keyframes ride {
+      0% { left: -150px; }
+      50% { left: 50%; transform: translateX(-50%); }
+      100% { left: 110%; }
+    }
+  </style>
+</head>
+<body>
+
+
+    <h1 style="color: #FEA116;">QuickBite</h1>
+  <h1>🎉 Thank you for your order!</h1>
+  <p>Your delicious meal is on its way! 🚴‍♂️🍔</p>
+
+  <div class="timer">
+    Estimated arrival in <span id="countdown">900</span> seconds
+  </div>
+
+  <img src="delivery.png" alt="Delivery Guy" class="delivery">
+
+  <p>Check you <span style="color: #FEA116;" >mailbox</span> for you receipt</p>
+  <p><span style="color: #FEA116;" >Contact us</span> directly in case of delays</p>
+
+  <script>
+    let timeLeft = 900; // 15 minutes = 900 seconds
+    const countdownElement = document.getElementById('countdown');
+
+    const timer = setInterval(() => {
+      timeLeft--;
+      countdownElement.textContent = timeLeft;
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        countdownElement.textContent = "now!";
+      }
+    }, 1000); // 1 second
+  </script>
+
+</body>
+</html>

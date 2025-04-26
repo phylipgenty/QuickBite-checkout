@@ -267,12 +267,18 @@
                 email: email,
                 amount: amount * 100, // Convert to kobo
                 currency: 'NGN',
+                
+                // me just add this one n?
                 callback: function(response) {
-                    alert('Payment complete! Reference: ' + response.reference);
-                    startTimer(); // Start the countdown timer after successful payment
-                    sendOrderDetails(); // Send order details after successful payment
-                    clearCart(); // Clear the cart after successful payment
-                },
+    alert('Payment complete! Reference: ' + response.reference);
+    startTimer(); 
+    sendOrderDetails(); 
+    clearCart(); 
+    
+    // chat added this here 🚀
+    window.location.href = "thankyou.html"; 
+},
+
                 onClose: function() {
                     alert('Payment window closed.');
                 }
