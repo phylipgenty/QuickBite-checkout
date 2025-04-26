@@ -57,7 +57,7 @@
     
     <script>
         // Check if the admin is already logged in
-if (localStorage.getItem("isAdmin") !== "true") {
+if (sessionStorage.getItem("isAdmin") !== "true") {
     window.location.href = "admin-login.html";  // Redirect to login page if not logged in
 } else {
     // Admin is logged in, continue showing the admin page
@@ -130,10 +130,12 @@ if (localStorage.getItem("isAdmin") !== "true") {
             localStorage.setItem("menuUpdated", Date.now());
         }, 5000);
 
+        // I just updated this shit
         document.getElementById("logoutBtn").addEventListener("click", function () {
-            localStorage.removeItem("adminLoggedIn");
-            window.location.href = "admin-login.html";
-        });
+   sessionStorage.removeItem("isAdmin"); // 👈 Fix here
+    window.location.href = "admin-login.html";
+});
+
     </script>
 </body>
 </html>

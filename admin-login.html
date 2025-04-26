@@ -52,23 +52,24 @@
     </div>
 
     <script>
-        function login() {
-            const username = document.getElementById("username").value;
-            const password = document.getElementById("password").value;
-            const errorMessage = document.getElementById("errorMessage");
-
-            if (username === "Admin" && password === "QuickBite008") {
-                localStorage.setItem("isAdmin", "true");
-                window.location.href = "admin.html";
-            } else {
-                errorMessage.textContent = "Invalid username or password!";
-            }
-        }
-
-        // Check if the admin is already logged in
-        if (localStorage.getItem("isAdmin") === "true") {
+    window.addEventListener('DOMContentLoaded', () => {
+        if (sessionStorage.getItem("isAdmin") === "true") {
             window.location.href = "admin.html";
         }
+    });
+
+    function login() {
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        const errorMessage = document.getElementById("errorMessage");
+
+        if (username === "Admin" && password === "QuickBite008") {
+            sessionStorage.setItem("isAdmin", "true");
+            window.location.href = "admin.html";
+        } else {
+            errorMessage.textContent = "Invalid username or password!";
+        }
+    }
     </script>
 </body>
 </html>
